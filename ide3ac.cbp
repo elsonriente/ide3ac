@@ -98,9 +98,13 @@
 		<Unit filename="ide3acApp.h" />
 		<Unit filename="ide3acMain.cpp" />
 		<Unit filename="ide3acMain.h" />
+		<Unit filename="include/Definitions.h" />
+		<Unit filename="include/EditorCtrl.h" />
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="src/Definitions.cpp" />
+		<Unit filename="src/EditorCtrl.cpp" />
 		<Unit filename="wx_pch.h">
 			<Option compile="1" />
 			<Option weight="0" />

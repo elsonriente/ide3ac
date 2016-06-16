@@ -4,7 +4,7 @@
  * Author:    A. Berestyuk (elsonriente.work@gmail.com)
  * Created:   2016-03-18
  * Copyright: A. Berestyuk ()
- * License:
+ * License:   zlib (http://www.gzip.org/zlib/zlib_license.html)
  **************************************************************/
 
 #ifdef WX_PRECOMP
@@ -61,7 +61,7 @@ BEGIN_EVENT_TABLE(ide3acFrame, wxFrame)
     EVT_MENU (wxID_SAVEAS,           ide3acFrame::OnFileSaveAs)
     EVT_MENU (wxID_CLOSE,            ide3acFrame::OnFileClose)
     // properties
-    //EVT_MENU (myID_PROPERTIES,       ide3acFrame::OnProperties)
+    EVT_MENU (myID_PROPERTIES,       ide3acFrame::OnProperties)
     // exit
     EVT_MENU (idMenuQuit,            ide3acFrame::OnExit)
     EVT_MENU (wxID_EXIT,             ide3acFrame::OnExit)
@@ -73,10 +73,10 @@ BEGIN_EVENT_TABLE(ide3acFrame, wxFrame)
     EVT_MENU (wxID_SELECTALL,        ide3acFrame::OnEdit)
     EVT_MENU (wxID_REDO,             ide3acFrame::OnEdit)
     EVT_MENU (wxID_UNDO,             ide3acFrame::OnEdit)
-    //EVT_MENU (wxID_FIND,             ide3acFrame::OnEdit)
+    EVT_MENU (wxID_FIND,             ide3acFrame::OnEdit)
     // And all our edit-related menu commands.
-    //EVT_MENU_RANGE (myID_EDIT_FIRST, myID_EDIT_LAST,
-    //                                 ide3acFrame::OnEdit)
+    EVT_MENU_RANGE (myID_EDIT_FIRST, myID_EDIT_LAST,
+                                     ide3acFrame::OnEdit)
     // target platform change
     //EVT_MENU (myID_X86,              ide3acFrame::OnTargetPlatformChange)
     //EVT_MENU (myID_ARM,              ide3acFrame::OnTargetPlatformChange)
@@ -93,6 +93,8 @@ BEGIN_EVENT_TABLE(ide3acFrame, wxFrame)
     // help
     //EVT_MENU (wxID_HELP_CONTENTS,    ide3acFrame::OnHelpContents)
     EVT_MENU (wxID_ABOUT,            ide3acFrame::OnAbout)
+    // editor
+    EVT_STC_MODIFIED (wxID_ANY,      ide3acFrame::OnModified)
 END_EVENT_TABLE()
 
 ide3acFrame::ide3acFrame(wxFrame *frame, const wxString& title)
@@ -152,7 +154,7 @@ ide3acFrame::ide3acFrame(wxFrame *frame, const wxString& title)
     // editor window
     wxPanel *editorPanel=new wxPanel(m_splitCode, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL|wxNO_BORDER);
     wxStaticBoxSizer *editorSizer=new wxStaticBoxSizer(wxVERTICAL, editorPanel, _("Editor"));
-    m_editor = new wxTextCtrl(editorPanel, myID_EDITOR, _(""), wxDefaultPosition, wxDefaultSize, wxTE_AUTO_SCROLL|wxTE_MULTILINE, wxDefaultValidator, _T("myID_EDITOR"));
+    m_editor = new EditorCtrl(editorPanel, myID_EDITOR, wxDefaultPosition, wxDefaultSize);
     editorSizer->Add(m_editor, 1, wxALL|wxEXPAND, 0);
     editorPanel->SetSizer(editorSizer);
 
@@ -269,6 +271,9 @@ void ide3acFrame::OnFileSave(wxCommandEvent &WXUNUSED(event))
         return;
     }
     m_editor->SaveFile();
+    wxFileName w(m_editor->GetFilename());
+    w.Normalize();
+    m_notebook->SetPageText(m_notebook->GetSelection(), w.GetName());
 }
 
 void ide3acFrame::OnFileSaveAs (wxCommandEvent &WXUNUSED(event))
@@ -306,12 +311,20 @@ void ide3acFrame::OnFileClose(wxCommandEvent &WXUNUSED(event))
             }
         }
     }
-    //m_editor->SetFilename(wxEmptyString);
+    m_editor->SetFilename(wxEmptyString);
     m_editor->Clear();
     m_editor->DiscardEdits();
-    //m_editor->ClearAll();
-    //m_editor->SetSavePoint();
+    m_editor->ClearAll();
+    m_editor->SetSavePoint();
     m_notebook->SetPageText(m_notebook->GetSelection(), NONAME + wxString() << nonameFileCounter++);
+}
+
+// properties event handlers
+void ide3acFrame::OnProperties (wxCommandEvent &WXUNUSED(event))
+{
+    if (!m_editor)
+        return;
+    EditorCtrlProperties dlg(m_editor, 0);
 }
 
 // edit events
@@ -319,6 +332,13 @@ void ide3acFrame::OnEdit (wxCommandEvent &event)
 {
     if (m_editor)
         m_editor->GetEventHandler()->ProcessEvent(event);
+}
+
+void ide3acFrame::OnModified(wxStyledTextEvent &WXUNUSED(event))
+{
+    wxFileName w(m_editor->GetFilename());
+    w.Normalize();
+    m_notebook->SetPageText(m_notebook->GetSelection(), wxT("*") + w.GetName());
 }
 
 // private functions

@@ -4,7 +4,7 @@
  * Author:    A. Berestyuk (elsonriente.work@gmail.com)
  * Created:   2016-03-18
  * Copyright: A. Berestyuk ()
- * License:
+ * License:   zlib (http://www.gzip.org/zlib/zlib_license.html)
  **************************************************************/
 
 #ifdef WX_PRECOMP

@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1458294501 source:c:\projects\ide3ac\wx_pch.h
+1465902551 source:c:\projects\ide3ac\wx_pch.h
 	<wx/wxprec.h>
 	<wx/wx.h>
 
@@ -1949,26 +1949,29 @@
 1412482750 c:\wxwidgets-3.0.2\include\wx\msw\mdi.h
 	"wx/frame.h"
 
-1465645953 source:c:\projects\ide3ac\ide3acapp.cpp
+1465902663 source:c:\projects\ide3ac\ide3acapp.cpp
 	"wx_pch.h"
 	"ide3acApp.h"
 	"ide3acMain.h"
 
-1458294501 c:\projects\ide3ac\wx_pch.h
+1465902551 c:\projects\ide3ac\wx_pch.h
 	<wx/wxprec.h>
 	<wx/wx.h>
 
-1465821937 c:\projects\ide3ac\ide3acapp.h
+1465902667 c:\projects\ide3ac\ide3acapp.h
 	<wx/app.h>
 	"../sample.xpm"
 
-1465837898 c:\projects\ide3ac\ide3acmain.h
+1466011052 c:\projects\ide3ac\ide3acmain.h
 	<wx/wx.h>
 	<wx/notebook.h>
 	<wx/textctrl.h>
 	<wx/splitter.h>
 	<wx/sizer.h>
+	<wx/stc/stc.h>
+	"include/Definitions.h"
 	"ide3acApp.h"
+	"include/EditorCtrl.h"
 
 1465824023 source:c:\projects\ide3ac\resource.rc
 	"wx/msw/wx.rc"
@@ -1990,11 +1993,13 @@
 
 1412482750 c:\wxwidgets-3.0.2\include\wx\msw\rcdefs.h
 
-1465824001 source:c:\projects\ide3ac\ide3acmain.cpp
+1466011052 source:c:\projects\ide3ac\ide3acmain.cpp
 	"wx_pch.h"
 	<wx/artprov.h>
 	<wx/bitmap.h>
 	<wx/image.h>
+	<wx/menu.h>
+	<wx/filename.h>
 	"ide3acMain.h"
 
 1412482750 c:\wxwidgets-3.0.2\include\wx\notebook.h
@@ -2045,4 +2050,60 @@
 1412482750 c:\wxwidgets-3.0.2\include\wx\generic\splitter.h
 	"wx/window.h"
 	"wx/containr.h"
+
+1465999552 c:\projects\ide3ac\include\editor.h
+	"wx/wx.h"
+	"wx/textdlg.h"
+	<wx/stc/stc.h>
+	"Definitions.h"
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\stc\stc.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/dnd.h"
+	"wx/stopwatch.h"
+	"wx/versioninfo.h"
+	"wx/textentry.h"
+	"wx/textctrl.h"
+
+1412482748 c:\wxwidgets-3.0.2\include\wx\dnd.h
+	"wx/defs.h"
+	"wx/dataobj.h"
+	"wx/cursor.h"
+	"wx/msw/ole/dropsrc.h"
+	"wx/msw/ole/droptgt.h"
+	"wx/motif/dnd.h"
+	"wx/x11/dnd.h"
+	"wx/gtk/dnd.h"
+	"wx/gtk1/dnd.h"
+	"wx/osx/dnd.h"
+	"wx/os2/dnd.h"
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\msw\ole\dropsrc.h
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
+
+1466019245 c:\projects\ide3ac\include\definitions.h
+	<vector>
+	<string>
+	"wx/stc/stc.h"
+
+1466035022 source:c:\projects\ide3ac\src\definitions.cpp
+	"../wx_pch.h"
+	"wx/string.h"
+	"../include/Definitions.h"
+
+1466015438 c:\projects\ide3ac\include\editorctrl.h
+	"wx/wx.h"
+	"wx/textdlg.h"
+	<wx/stc/stc.h>
+	"Definitions.h"
+
+1466035989 source:c:\projects\ide3ac\src\editorctrl.cpp
+	"../wx_pch.h"
+	<algorithm>
+	"wx/file.h"
+	"wx/filename.h"
+	"wx/string.h"
+	"../include/EditorCtrl.h"
 

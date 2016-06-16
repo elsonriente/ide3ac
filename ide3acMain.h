@@ -4,7 +4,7 @@
  * Author:    A. Berestyuk (elsonriente.work@gmail.com)
  * Created:   2016-03-18
  * Copyright: A. Berestyuk ()
- * License:
+ * License:   zlib (http://www.gzip.org/zlib/zlib_license.html)
  **************************************************************/
 
 #ifndef IDE3ACMAIN_H
@@ -14,61 +14,17 @@
     #include <wx/wx.h>
 #endif
 
-// wxWidgets headers
+//!wxWidgets headers
 #include <wx/notebook.h>
 #include <wx/textctrl.h>
 #include <wx/splitter.h>
 #include <wx/sizer.h>
+#include <wx/stc/stc.h>
 
+//!application headers
+#include "include/Definitions.h"
 #include "ide3acApp.h"
-
-// ----------------------------------------------------------------------------
-// standard IDs
-// ----------------------------------------------------------------------------
-enum
-{
-    // menu IDs
-    idMenuQuit = 1000,
-    idMenuAbout,
-    myID_PROPERTIES = wxID_HIGHEST,
-    myID_EDIT_FIRST,
-    myID_FINDNEXT,
-    myID_REPLACE,
-    myID_REPLACENEXT,
-    myID_GOTO,
-    myID_PAGEACTIVE,
-    myID_DISPLAYEOL,
-    myID_LINENUMBER,
-    myID_LONGLINEON,
-    myID_WHITESPACE,
-    myID_FOLDTOGGLE,
-    myID_OVERTYPE,
-    myID_READONLY,
-    myID_WRAPMODEON,
-    myID_PAGEPREV,
-    myID_PAGENEXT,
-    myID_SELECTLINE,
-    myID_EDIT_LAST = myID_SELECTLINE,
-    myID_TOOLBAR_TOGGLE,
-    myID_X86,
-    myID_ARM,
-    myID_MIPS32,
-    myID_SYMBOL_TABLE,
-    myID_TARGET_PLATFORM,
-    myID_SIMULATOR_RUN,
-    myID_OPTIONS,
-    myID_NOTEBOOK,
-    myID_SPLITTER_MAIN,
-    myID_SPLIT_CODE,
-    myID_EDITOR,
-    myID_ASM_WINDOW,
-    myID_LOG,
-    // other IDs
-    myID_STATUSBAR,
-
-    // dialog find IDs
-    myID_DLG_FIND_TEXT,
-};
+#include "include/EditorCtrl.h"
 
 //--------------------------------------------------------------
 //! frame of the application APP_VENDOR-APP_NAME.
@@ -95,8 +51,11 @@ class ide3acFrame: public wxFrame
         void OnFileSave(wxCommandEvent &event);
         void OnFileSaveAs(wxCommandEvent &event);
         void OnFileClose(wxCommandEvent &event);
+        //! properties
+        void OnProperties (wxCommandEvent &event);
         //! edit events
         void OnEdit(wxCommandEvent &event);
+        void OnModified(wxStyledTextEvent &event);
 
     private:
         void FileOpen(wxString fname);
@@ -125,7 +84,7 @@ class ide3acFrame: public wxFrame
         wxSplitterWindow* m_splittermain;
         wxSplitterWindow* m_splitCode;
         // editor object
-        wxTextCtrl* m_editor;
+        EditorCtrl* m_editor;
         // asm code window
         wxTextCtrl* m_asm;
         // output window
