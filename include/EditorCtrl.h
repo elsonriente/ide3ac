@@ -21,16 +21,19 @@
     #include "wx/textdlg.h"
 #endif
 
+#include <vector>
+
 //! wxWidgets headers
 #include <wx/stc/stc.h>  // styled text control
 
 //! application headers
 #include "Definitions.h" // definitions
+#include "CodeGen.h" // code generator
 
 class EditorCtrlProperties;
 
 //--------------------------------------------------------------
-//! Edit
+//! EditorCtrl
 class EditorCtrl: public wxStyledTextCtrl
 {
     friend class EditorCtrlProperties;
@@ -74,11 +77,11 @@ public:
     void OnLineNumber(wxCommandEvent &event);
     void OnLongLineOn(wxCommandEvent &event);
     void OnWhiteSpace(wxCommandEvent &event);
-    void OnFoldToggle(wxCommandEvent &event);
     void OnSetOverType(wxCommandEvent &event);
     void OnSetReadOnly(wxCommandEvent &event);
     void OnWrapmodeOn(wxCommandEvent &event);
     void OnUseCharset(wxCommandEvent &event);
+    void OnBBToggle(wxCommandEvent &event);
     //! extra
     void OnConvertEOL(wxCommandEvent &event);
     // stc
@@ -105,6 +108,19 @@ public:
     bool UserSettings(const wxString &filename);
     LanguageInfo const* GetLanguageInfo() {return m_language;};
 
+    //! educational mode
+    void OnEduToggle(wxCommandEvent &event);
+    void OnEduHome(wxCommandEvent &event);
+    void OnEduPrev(wxCommandEvent &event);
+    void OnEduNext(wxCommandEvent &event);
+    void OnEduReset(wxCommandEvent &event);
+    void AnnotationAdd(int line, wxString ann);
+    void AnnotationRemove(int line);
+    void AnnotationClear();
+    void ShowEduPage(int pageNr);
+    //! basic blocks
+    void DrawBBs();
+
 private:
     // file
     wxString m_filename;
@@ -119,11 +135,19 @@ private:
     int m_FoldingMargin;
     int m_DividerID;
 
+    // show base blocks mode
+    bool showBB;
+    std::vector<int> bbLeader;
+
+    // educational mode
+    bool eduMode;
+    int pageNr;
+
     wxDECLARE_EVENT_TABLE();
 };
 
 //--------------------------------------------------------------
-//! EditCtrlProperties
+//! EditorCtrlProperties
 class EditorCtrlProperties: public wxDialog
 {
 public:

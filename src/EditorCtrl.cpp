@@ -21,6 +21,8 @@
 
 //! headers
 #include <algorithm>
+#include <vector>
+#include <map>
 
 //! wxWidgets headers
 #include "wx/file.h"     // raw file io support
@@ -30,6 +32,63 @@
 //! application headers
 //#include "../include/Definitions.h" // definitions
 #include "../include/EditorCtrl.h" // edit module
+
+//--------------------------------------------------------------
+// declarations
+//--------------------------------------------------------------
+
+// The (uniform) style used for the annotations.
+const int ANNOTATION_STYLE = wxSTC_STYLE_LASTPREDEFINED + 1;
+
+static int edu_page_max = 1;
+
+// Lesson content structure
+struct Lesson
+{
+    wxString header;
+    std::vector<wxString> code;
+    std::map<int, wxString> text;
+};
+
+const std::vector<Lesson> l = {
+                                {   wxT("Трансляция инструкции if-else"),
+                                    {
+                                        wxT("a = 3\n"),
+                                        wxT("b = 0\n"),
+                                        wxT("$t0 = a < 5\n"),
+                                        wxT("expression = $t0\n"),
+                                        wxT("$t1 = expression\n"),
+                                        wxT("ifFalse $t1 goto $L1\n"),
+                                        wxT("b = 1\n"),
+                                        wxT("goto $L2\n"),
+                                        wxT("$L1: b = 2\n"),
+                                        wxT("$L2: halt")
+                                    },
+                                    {
+                                        {   1,
+                                            wxT("Схема трансляции для оператора if позволяет избежать дублирования некоторых переходов."
+                                            "\nДля компактности мы ввели действия непосредственно в продукцию"
+                                            "\n(на практике могут потребоваться дополнительные нетерминалы и продукции)."
+                                            "\n\tСинтаксис:"
+                                            "\n\tif (expression) statement1 else statement2"
+                                            "\n\tДействия в продукциях:"
+                                            "\n\tif(expression) {C1} statement1 {C2} else statement2 {C3}"
+                                            "\nДействиями являются:"
+                                            "\n\t- C1 – увеличить номер метки; образовать код для перехода к метке,"
+                                            "\nесли expression ложно; поместить номер метки в стек."
+                                            "\n\t- C2 – увеличить номер метки; образовать код для безусловного перехода к метке;"
+                                            "\nизвлечь из стека метку Lk; установить метку Lk в коде; поместить в стек метку,"
+                                            "\nприменявшуюся в безусловном переходе."
+                                            "\n\t- C3 – извлечь из стека метку Lj; установить метку Lj в коде."
+                                            "\nПри использовании данной грамматики будет создан следующий код:"
+                                            "\nПример:")
+                                        },
+                                        {   3, wxT("Код для вычисления expression") },
+                                        {   6, wxT("код для statement1") },
+                                        {   8, wxT("код для statement2") }
+                                    }
+                                },
+                              };
 
 //--------------------------------------------------------------
 // implementation
@@ -63,10 +122,10 @@ wxBEGIN_EVENT_TABLE (EditorCtrl, wxStyledTextCtrl)
     EVT_MENU (myID_LINENUMBER,         EditorCtrl::OnLineNumber)
     EVT_MENU (myID_LONGLINEON,         EditorCtrl::OnLongLineOn)
     EVT_MENU (myID_WHITESPACE,         EditorCtrl::OnWhiteSpace)
-    EVT_MENU (myID_FOLDTOGGLE,         EditorCtrl::OnFoldToggle)
     EVT_MENU (myID_OVERTYPE,           EditorCtrl::OnSetOverType)
     EVT_MENU (myID_READONLY,           EditorCtrl::OnSetReadOnly)
     EVT_MENU (myID_WRAPMODEON,         EditorCtrl::OnWrapmodeOn)
+    EVT_MENU (myID_BB,                 EditorCtrl::OnBBToggle)
     //EVT_MENU (myID_CHARSETANSI,        EditorCtrl::OnUseCharset)
     //EVT_MENU (myID_CHARSETMAC,         EditorCtrl::OnUseCharset)
     // extra
@@ -79,13 +138,19 @@ wxBEGIN_EVENT_TABLE (EditorCtrl, wxStyledTextCtrl)
     EVT_STC_KEY (wxID_ANY,             EditorCtrl::OnKey)
     EVT_KEY_DOWN (                     EditorCtrl::OnKeyDown)
     EVT_STC_STYLENEEDED (wxID_ANY,     EditorCtrl::OnStyleNeeded)
+    // educational mode events
+    EVT_MENU (myID_EDU_TOGGLE,         EditorCtrl::OnEduToggle)
+    EVT_MENU (myID_EDU_HOME,           EditorCtrl::OnEduHome)
+    EVT_MENU (myID_EDU_PREV,           EditorCtrl::OnEduPrev)
+    EVT_MENU (myID_EDU_NEXT,           EditorCtrl::OnEduNext)
+    EVT_MENU (myID_EDU_RESET,           EditorCtrl::OnEduReset)
 wxEND_EVENT_TABLE()
 
 EditorCtrl::EditorCtrl(wxWindow *parent, wxWindowID id,
                         const wxPoint &pos,
                         const wxSize &size,
                         long style)
-    : wxStyledTextCtrl(parent, id, pos, size, style)
+    : wxStyledTextCtrl(parent, id, pos, size, style), bbLeader()
 {
     m_filename = wxEmptyString;
 
@@ -132,6 +197,9 @@ EditorCtrl::EditorCtrl(wxWindow *parent, wxWindowID id,
     MarkerDefine(wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_ARROWDOWN, wxT("BLACK"), wxT("WHITE"));
     MarkerDefine(wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_EMPTY,     wxT("BLACK"), wxT("BLACK"));
     MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_EMPTY,     wxT("BLACK"), wxT("BLACK"));
+    MarkerDefine(1,                           wxSTC_MARK_CHARACTER + 66, wxT("BLACK"), wxColour(238, 238, 238));
+    MarkerDefine(2,                           wxSTC_MARK_CHARACTER, wxT("BLACK"), wxColour(238, 238, 238));
+    MarkerDefine(3,                           wxSTC_MARK_CHARACTER, wxT("BLACK"), wxColour(220, 220, 238));
 
     // annotations
     AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
@@ -143,6 +211,13 @@ EditorCtrl::EditorCtrl(wxWindow *parent, wxWindowID id,
     SetLayoutCache(wxSTC_CACHE_PAGE);
 
     InitializePrefs(wxT("ThreeAC"));
+
+    // show base blocks mode
+    showBB = false;
+
+    // educational mode
+    eduMode = false;
+    pageNr = 0;
 }
 
 EditorCtrl::~EditorCtrl () {}
@@ -289,12 +364,12 @@ void EditorCtrl::OnWhiteSpace(wxCommandEvent &WXUNUSED(event))
     SetViewWhiteSpace(GetViewWhiteSpace() == 0?
                        wxSTC_WS_VISIBLEALWAYS: wxSTC_WS_INVISIBLE);
 }
-
+/*
 void EditorCtrl::OnFoldToggle(wxCommandEvent &WXUNUSED(event))
 {
     ToggleFold (GetFoldParent(GetCurrentLine()));
 }
-
+*/
 void EditorCtrl::OnSetOverType(wxCommandEvent &WXUNUSED(event))
 {
     SetOvertype (!GetOvertype());
@@ -323,79 +398,6 @@ void EditorCtrl::OnUseCharset (wxCommandEvent &event) {
     SetCodePage (charset);
 }
 
-void EditorCtrl::OnAnnotationAdd(wxCommandEvent& WXUNUSED(event))
-{
-    const int line = GetCurrentLine();
-
-    wxString ann = AnnotationGetText(line);
-    ann = wxGetTextFromUser
-          (
-            wxString::Format("Enter annotation for the line %d", line),
-            "Edit annotation",
-            ann,
-            this
-          );
-    if ( ann.empty() )
-        return;
-
-    AnnotationSetText(line, ann);
-    AnnotationSetStyle(line, ANNOTATION_STYLE);
-
-    // Scintilla doesn't update the scroll width for annotations, even with
-    // scroll width tracking on, so do it manually.
-    const int width = GetScrollWidth();
-
-    // NB: The following adjustments are only needed when using
-    //     wxSTC_ANNOTATION_BOXED annotations style, but we apply them always
-    //     in order to make things simpler and not have to redo the width
-    //     calculations when the annotations visibility changes. In a real
-    //     program you'd either just stick to a fixed annotations visibility or
-    //     update the width when it changes.
-
-    // Take into account the fact that the annotation is shown indented, with
-    // the same indent as the line it's attached to.
-    int indent = GetLineIndentation(line);
-
-    // This is just a hack to account for the width of the box, there doesn't
-    // seem to be any way to get it directly from Scintilla.
-    indent += 3;
-
-    const int widthAnn = TextWidth(ANNOTATION_STYLE, ann + wxString(indent, ' '));
-
-    if (widthAnn > width)
-        SetScrollWidth(widthAnn);
-}
-
-void EditorCtrl::OnAnnotationRemove(wxCommandEvent& WXUNUSED(event))
-{
-    AnnotationSetText(GetCurrentLine(), wxString());
-}
-
-void EditorCtrl::OnAnnotationClear(wxCommandEvent& WXUNUSED(event))
-{
-    AnnotationClearAll();
-}
-
-void EditorCtrl::OnAnnotationStyle(wxCommandEvent& event)
-{
-    int style = 0;
-    switch (event.GetId()) {
-        case myID_ANNOTATION_STYLE_HIDDEN:
-            style = wxSTC_ANNOTATION_HIDDEN;
-            break;
-
-        case myID_ANNOTATION_STYLE_STANDARD:
-            style = wxSTC_ANNOTATION_STANDARD;
-            break;
-
-        case myID_ANNOTATION_STYLE_BOXED:
-            style = wxSTC_ANNOTATION_BOXED;
-            break;
-    }
-
-    AnnotationSetVisible(style);
-}
-
 void EditorCtrl::OnChangeCase (wxCommandEvent &event) {
     switch (event.GetId()) {
         case myID_CHANGELOWER: {
@@ -421,6 +423,68 @@ void EditorCtrl::OnConvertEOL (wxCommandEvent &event) {
     SetEOLMode (eolMode);
 }
 */
+//! show base blocks
+void EditorCtrl::OnBBToggle(wxCommandEvent &event)
+{
+    showBB = !showBB;
+    if (showBB)
+        DoStyling(0, GetTextLength());
+    else
+        DrawBBs();
+}
+
+//! educational mode
+void EditorCtrl::OnEduToggle(wxCommandEvent &event)
+{
+    if(!eduMode)
+    {
+        eduMode = true;
+        edu_page_max = l.size() - 1;
+        pageNr = 0;
+        ShowEduPage(pageNr);
+    }
+    else
+        eduMode = false;
+}
+
+void EditorCtrl::OnEduHome(wxCommandEvent &event)
+{
+    pageNr = 0;
+    ShowEduPage(pageNr);
+}
+
+void EditorCtrl::OnEduPrev(wxCommandEvent &event)
+{
+    if(pageNr > 0)
+        ShowEduPage(--pageNr);
+}
+
+void EditorCtrl::OnEduNext(wxCommandEvent &event)
+{
+    if(pageNr < edu_page_max)
+        ShowEduPage(++pageNr);
+}
+
+void EditorCtrl::OnEduReset(wxCommandEvent &event)
+{
+    ShowEduPage(pageNr);
+}
+
+void EditorCtrl::ShowEduPage(int pageNr)
+{
+    Clear();
+    DiscardEdits();
+    ClearAll();
+
+    m_filename = l[pageNr].header;
+    for(unsigned Nr = 0; Nr < l[pageNr].code.size(); Nr++)
+        AddText(l[pageNr].code[Nr]);
+    for(auto it = l[pageNr].text.begin(); it != l[pageNr].text.end(); it++)
+        AnnotationAdd(it->first, it->second);
+
+    SetSavePoint();
+}
+
 //! misc
 void EditorCtrl::OnMarginClick (wxStyledTextEvent &event)
 {
@@ -468,12 +532,26 @@ void EditorCtrl::DoStyling(int startPos, int endPos)
     const int STATE_NUMBER = 2;
     const int STATE_STRING = 3;
 
-    int sl = LineFromPosition(startPos);
-    int el = LineFromPosition(endPos);
+    int sl, el;
+    if (!showBB)
+    {
+        sl = LineFromPosition(startPos);
+        el = LineFromPosition(endPos);
+    }
+    else
+    {
+        sl = LineFromPosition(0);
+        el = LineFromPosition(GetTextLength());
+    }
 
     startPos = PositionFromLine(sl);
     // Start styling
     StartStyling(startPos, 31);
+
+    // base block related vars
+    bool wasGoto = false;
+    bool gotoFound = false;
+    bool labelFound = false;
 
     for (int line = sl; line <= el; line++)
     {
@@ -529,7 +607,7 @@ void EditorCtrl::DoStyling(int startPos, int endPos)
                     break;
 
                 case STATE_NUMBER:
-                    if (std::isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'x')
+                    if (std::isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'x' || c == '.')
                     {
                         length++;
                     }
@@ -552,12 +630,19 @@ void EditorCtrl::DoStyling(int startPos, int endPos)
                         int style = mySTC_TYPE_IDENTIFIER;
                         wxString identifier = GetTextRange(startPos - length, startPos);
                         if (std::find(tacKeywords.begin(), tacKeywords.end(), identifier) != tacKeywords.end())
+                        {
                             style = mySTC_TYPE_WORD1;
+                            if (identifier == wxT("goto"))
+                                gotoFound = true;
+                            if (identifier == wxT("uminus"))
+                                style = mySTC_TYPE_DEFAULT;
+                        }
 
                         if(style == mySTC_TYPE_IDENTIFIER && c == ':')
                         {
                             length++;
                             SetStyling(length, mySTC_TYPE_LABEL);
+                            labelFound = true;
                             length = 0;
                             state = STATE_UNKNOWN;
                         }
@@ -573,11 +658,108 @@ void EditorCtrl::DoStyling(int startPos, int endPos)
             }
             startPos++;
         }
+        // bb leader store
+        if (labelFound || wasGoto)
+        {
+            if (std::find(bbLeader.begin(), bbLeader.end(), line) == bbLeader.end())
+                bbLeader.push_back(line);
+            labelFound = false;
+            wasGoto = false;
+        }
+        else
+        {
+            auto idx = std::find(bbLeader.begin(), bbLeader.end(), line);
+            if (idx != bbLeader.end())
+                bbLeader.erase(idx);
+        }
+        // next line - bb leader
+        if (gotoFound)
+        {
+            wasGoto = true;
+            gotoFound = false;
+        }
+        if (line == 0 && std::find(bbLeader.begin(), bbLeader.end(), line) == bbLeader.end())
+            bbLeader.push_back(line);
     }
+    // sort bb leader array
+    std::sort(bbLeader.begin(), bbLeader.end());
+    DrawBBs();
 }
 
 //----------------------------------------------------------------------------
 // private functions
+void EditorCtrl::DrawBBs()
+{
+    MarkerDeleteAll(1);
+    MarkerDeleteAll(2);
+    MarkerDeleteAll(3);
+    if (bbLeader.empty())
+        return;
+
+    if (showBB)
+    {
+        bool bbStyleSwitch = false;
+        for(int Nr = 0, bbLeaderIdx = 0; Nr < GetLineCount(); Nr++)
+        {
+            if (Nr == bbLeader[bbLeaderIdx])
+            {
+                MarkerAdd(Nr, 1);
+                if(bbLeaderIdx < bbLeader.size())
+                    bbLeaderIdx++;
+                bbStyleSwitch = !bbStyleSwitch;
+            }
+            if (bbStyleSwitch)
+                MarkerAdd(Nr, 2);
+            else
+                MarkerAdd(Nr, 3);
+        }
+    }
+}
+
+void EditorCtrl::AnnotationAdd(int line, wxString ann)
+{
+    ann = AnnotationGetText(line) + ann;
+    if ( ann.empty() )
+        return;
+
+    AnnotationSetText(line, ann);
+    AnnotationSetStyle(line, ANNOTATION_STYLE);
+
+    // Scintilla doesn't update the scroll width for annotations, even with
+    // scroll width tracking on, so do it manually.
+    const int width = GetScrollWidth();
+
+    // NB: The following adjustments are only needed when using
+    //     wxSTC_ANNOTATION_BOXED annotations style, but we apply them always
+    //     in order to make things simpler and not have to redo the width
+    //     calculations when the annotations visibility changes. In a real
+    //     program you'd either just stick to a fixed annotations visibility or
+    //     update the width when it changes.
+
+    // Take into account the fact that the annotation is shown indented, with
+    // the same indent as the line it's attached to.
+    int indent = GetLineIndentation(line);
+
+    // This is just a hack to account for the width of the box, there doesn't
+    // seem to be any way to get it directly from Scintilla.
+    indent += 3;
+
+    const int widthAnn = TextWidth(ANNOTATION_STYLE, ann + wxString(indent, ' '));
+
+    if (widthAnn > width)
+        SetScrollWidth(widthAnn);
+}
+
+void EditorCtrl::AnnotationRemove(int line)
+{
+    AnnotationSetText(line, wxString());
+}
+
+void EditorCtrl::AnnotationClear()
+{
+    AnnotationClearAll();
+}
+
 wxString EditorCtrl::DeterminePrefs(const wxString &filename)
 {
     LanguageInfo const* curInfo;
@@ -635,10 +817,10 @@ bool EditorCtrl::InitializePrefs (const wxString &name)
     SetMarginWidth(m_LineNrID, 0); // start out not visible
 
     // annotations style
-    //StyleSetBackground(ANNOTATION_STYLE, wxColour(244, 220, 220));
-    //StyleSetForeground(ANNOTATION_STYLE, *wxBLACK);
-    //StyleSetSizeFractional(ANNOTATION_STYLE,
-    //        (StyleGetSizeFractional(wxSTC_STYLE_DEFAULT)*4)/5);
+    StyleSetBackground(ANNOTATION_STYLE, wxColour(220, 244, 220));
+    StyleSetForeground(ANNOTATION_STYLE, *wxBLACK);
+    StyleSetSizeFractional(ANNOTATION_STYLE,
+            (StyleGetSizeFractional(wxSTC_STYLE_DEFAULT)*4)/5);
 
     // default fonts for all styles!
     int Nr;
@@ -690,12 +872,13 @@ bool EditorCtrl::InitializePrefs (const wxString &name)
     SetMarginWidth(m_DividerID, 0);
     SetMarginSensitive(m_DividerID, false);
 
-    // folding
-    SetMarginType(m_FoldingID, wxSTC_MARGIN_SYMBOL);
-    SetMarginMask(m_FoldingID, wxSTC_MASK_FOLDERS);
-    StyleSetBackground(m_FoldingID, *wxWHITE);
-    SetMarginWidth(m_FoldingID, 0);
+    // bb highlighting
+    SetMarginType(m_FoldingID, wxSTC_MARGIN_TEXT);
+    SetMarginMask(m_FoldingID, wxSTC_MASK_FOLDERS | 0x3);
+    StyleSetBackground(m_FoldingID, wxColour(238, 238, 238));
+    SetMarginWidth(m_FoldingID, 16);
     SetMarginSensitive(m_FoldingID, false);
+    /*
     if (g_CommonPrefs.foldEnable)
     {
         SetMarginWidth(m_FoldingID, curInfo->folds != 0? m_FoldingMargin: 0);
@@ -708,6 +891,7 @@ bool EditorCtrl::InitializePrefs (const wxString &name)
     }
     SetFoldFlags(wxSTC_FOLDFLAG_LINEBEFORE_CONTRACTED |
                 wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
+    */
 
     // set spaces and indention
     SetTabWidth(4);

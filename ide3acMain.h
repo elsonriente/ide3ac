@@ -56,6 +56,9 @@ class ide3acFrame: public wxFrame
         //! edit events
         void OnEdit(wxCommandEvent &event);
         void OnModified(wxStyledTextEvent &event);
+        //! entity
+        void OnEduToggle(wxCommandEvent &event);
+        void OnEduPageChange(wxCommandEvent &event);
 
     private:
         void FileOpen(wxString fname);
@@ -69,6 +72,8 @@ class ide3acFrame: public wxFrame
 #if wxUSE_TOOLBAR
         //! creates a tool bar with some frequently used buttons
         wxToolBar *m_toolBar;
+        //! creates a tool bar with educational mode control buttons
+        wxToolBar *m_edu_toolBar;
         void CreateToolbar();
 #endif // wxUSE_TOOLBAR
 

@@ -50,7 +50,7 @@ const CommonInfo g_CommonPrefs = {
 // keywordlists
 // ThreeAC
 const char* ThreeACWordlist1 =
-    "goto ifTrue ifFalse param call return halt";
+    "goto ifTrue ifFalse param call return halt uminus";
 
 // Keywords for container-based tac language lexer
 const std::vector<wxString> tacKeywords = {
@@ -60,7 +60,8 @@ const std::vector<wxString> tacKeywords = {
     wxT("param"),
     wxT("call"),
     wxT("return"),
-    wxT("halt")
+    wxT("halt"),
+    wxT("uminus")
 };
 
 /*

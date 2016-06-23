@@ -16,6 +16,7 @@
 					<Add option="-g" />
 					<Add option="-D__WXDEBUG__" />
 					<Add directory="$(WXWIN)/lib/gcc_lib/mswud" />
+					<Add directory="include" />
 				</Compiler>
 				<ResourceCompiler>
 					<Add directory="$(WXWIN)/lib/gcc_lib/mswud" />
@@ -38,11 +39,12 @@
 				<Option output="bin/Release/ide3ac" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="0" />
-				<Option compiler="gcc" />
+				<Option compiler="clang" />
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
 					<Add option="-O2" />
 					<Add directory="$(WXWIN)/lib/gcc_lib/mswu" />
+					<Add directory="include" />
 				</Compiler>
 				<ResourceCompiler>
 					<Add directory="$(WXWIN)/lib/gcc_lib/mswu" />
@@ -64,15 +66,13 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wall" />
 			<Add option="-pipe" />
 			<Add option="-mthreads" />
+			<Add option="-Winvalid-pch" />
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-DwxUSE_UNICODE" />
-			<Add option="-Winvalid-pch" />
-			<Add option="-include wx_pch.h" />
-			<Add option="-DWX_PRECOMP" />
-			<Add option="-Wall" />
 			<Add directory="$(WXWIN)/include" />
 		</Compiler>
 		<ResourceCompiler>
@@ -98,11 +98,13 @@
 		<Unit filename="ide3acApp.h" />
 		<Unit filename="ide3acMain.cpp" />
 		<Unit filename="ide3acMain.h" />
+		<Unit filename="include/CodeGen.h" />
 		<Unit filename="include/Definitions.h" />
 		<Unit filename="include/EditorCtrl.h" />
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="src/CodeGen.cpp" />
 		<Unit filename="src/Definitions.cpp" />
 		<Unit filename="src/EditorCtrl.cpp" />
 		<Unit filename="wx_pch.h">

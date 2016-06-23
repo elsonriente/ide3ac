@@ -1962,7 +1962,7 @@
 	<wx/app.h>
 	"../sample.xpm"
 
-1466011052 c:\projects\ide3ac\ide3acmain.h
+1466630808 c:\projects\ide3ac\ide3acmain.h
 	<wx/wx.h>
 	<wx/notebook.h>
 	<wx/textctrl.h>
@@ -1993,7 +1993,7 @@
 
 1412482750 c:\wxwidgets-3.0.2\include\wx\msw\rcdefs.h
 
-1466011052 source:c:\projects\ide3ac\ide3acmain.cpp
+1466638707 source:c:\projects\ide3ac\ide3acmain.cpp
 	"wx_pch.h"
 	<wx/artprov.h>
 	<wx/bitmap.h>
@@ -2083,27 +2083,79 @@
 
 1412482750 c:\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1466019245 c:\projects\ide3ac\include\definitions.h
+1466631196 c:\projects\ide3ac\include\definitions.h
 	<vector>
 	<string>
 	"wx/stc/stc.h"
 
-1466035022 source:c:\projects\ide3ac\src\definitions.cpp
+1466608202 source:c:\projects\ide3ac\src\definitions.cpp
 	"../wx_pch.h"
 	"wx/string.h"
 	"../include/Definitions.h"
 
-1466015438 c:\projects\ide3ac\include\editorctrl.h
+1466642413 c:\projects\ide3ac\include\editorctrl.h
 	"wx/wx.h"
 	"wx/textdlg.h"
+	<vector>
 	<wx/stc/stc.h>
 	"Definitions.h"
 
-1466035989 source:c:\projects\ide3ac\src\editorctrl.cpp
+1466643470 source:c:\projects\ide3ac\src\editorctrl.cpp
 	"../wx_pch.h"
 	<algorithm>
+	<vector>
+	<map>
 	"wx/file.h"
 	"wx/filename.h"
 	"wx/string.h"
 	"../include/EditorCtrl.h"
+
+1466469120 source:c:\projects\ide3ac\src\codegen.cpp
+	"../wx_pch.h"
+	"wx/string.h"
+	"../include/CodeGen.h"
+
+1466322998 c:\projects\ide3ac\include\codegen.h
+	"wx/wx.h"
+	"wx/textdlg.h"
+	<vector>
+	<wx/stc/stc.h>
+	"EditorCtrl.h"
+
+1466467021 c:\projects\ide3ac\include\symtable.h
+	<wx/sizer.h>
+	<wx/grid.h>
+	<wx/button.h>
+	<wx/dialog.h>
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\grid.h
+	"wx/generic/grid.h"
+	"wx/generic/grideditors.h"
+	"wx/generic/gridctrl.h"
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\generic\grid.h
+	"wx/defs.h"
+	"wx/hashmap.h"
+	"wx/scrolwin.h"
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\generic\grideditors.h
+	"wx/defs.h"
+	"wx/scopedptr.h"
+
+1412482750 c:\wxwidgets-3.0.2\include\wx\generic\gridctrl.h
+	"wx/grid.h"
+	"wx/datetime.h"
+
+1466469754 c:\projects\ide3ac\include\symtblmain.h
+	<wx/sizer.h>
+	<wx/grid.h>
+	<wx/button.h>
+	<wx/dialog.h>
+
+1466469761 source:c:\projects\ide3ac\src\symtblmain.cpp
+	"../wx_pch.h"
+	"../include/symtblMain.h"
+	<wx/msgdlg.h>
+	<wx/intl.h>
+	<wx/string.h>
 

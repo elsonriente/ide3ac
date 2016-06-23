@@ -85,6 +85,11 @@ BEGIN_EVENT_TABLE(ide3acFrame, wxFrame)
     //EVT_MENU (myID_SYMBOL_TABLE,     ide3acFrame::OnSymbolTable)
     // simulator run
     //EVT_MENU (myID_SIMULATOR_RUN,    ide3acFrame::OnSimulatorRun)
+    // educational mode
+    EVT_MENU (myID_EDU_TOGGLE,       ide3acFrame::OnEduToggle)
+    EVT_MENU (myID_EDU_HOME,         ide3acFrame::OnEduPageChange)
+    EVT_MENU (myID_EDU_PREV,         ide3acFrame::OnEduPageChange)
+    EVT_MENU (myID_EDU_NEXT,         ide3acFrame::OnEduPageChange)
     // options
     //EVT_MENU (myID_OPTIONS,          ide3acFrame::OnOptions)
     // pages
@@ -111,32 +116,31 @@ ide3acFrame::ide3acFrame(wxFrame *frame, const wxString& title)
     CreateMenu ();
 #endif // wxUSE_MENUS
 
-    // open first page
-    //m_edit = new Edit (this, wxID_ANY);
-    //m_edit->SetFocus();
-
-    //FileOpen (wxT("stctest.cpp"));
-
     // main sizer of the application layout
     m_vbox = new wxBoxSizer(wxVERTICAL);
 
 #if wxUSE_TOOLBAR
     // create a tool bar with some frequently used buttons
     m_toolBar = new wxToolBar (this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL | wxTB_TEXT);
+    // create a tool bar with educational mode buttons
+    m_edu_toolBar = new wxToolBar (this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL | wxTB_TEXT);
     CreateToolbar ();
 
     m_vbox->Add(m_toolBar, 0, wxEXPAND);
+    m_vbox->Add(m_edu_toolBar, 0, wxEXPAND);
 
     if (m_menuBar->IsChecked(myID_TOOLBAR_TOGGLE))
         m_vbox->Show(m_toolBar);
     else
         m_vbox->Hide(m_toolBar);
+    if (m_menuBar->IsChecked(myID_EDU_TOGGLE))
+        m_vbox->Show(m_edu_toolBar);
+    else
+        m_vbox->Hide(m_edu_toolBar);
 
 #endif // wxUSE_TOOLBAR
 
     // initialize important variables
-    //m_edit = NULL;
-
     // notebook
     m_notebook = new wxNotebook(this, myID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0, _T("myID_NOTEBOOK"));
     // unnamed new files counter
@@ -170,7 +174,7 @@ ide3acFrame::ide3acFrame(wxFrame *frame, const wxString& title)
 
     // output window
     wxPanel *logPanel=new wxPanel(m_splittermain, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL|wxNO_BORDER);
-    wxStaticBoxSizer *logSizer=new wxStaticBoxSizer(wxVERTICAL, logPanel, _("Output Log"));
+    wxStaticBoxSizer *logSizer=new wxStaticBoxSizer(wxVERTICAL, logPanel, _("Output"));
     m_log = new wxTextCtrl(logPanel, myID_LOG, _(""), wxDefaultPosition, wxDefaultSize, wxTE_AUTO_SCROLL|wxTE_MULTILINE|wxTE_READONLY, wxDefaultValidator, _T("myID_LOG"));
     logSizer->Add(m_log, 1, wxALL|wxEXPAND, 0);
     logPanel->SetSizer(logSizer);
@@ -191,7 +195,7 @@ ide3acFrame::ide3acFrame(wxFrame *frame, const wxString& title)
     // create a status bar with some information about the used wxWidgets version
     CreateStatusBar(2);
     SetStatusText(_("Welcome to the Three Address Code IDE!"),0);
-    SetStatusText(wxbuildinfo(short_f), 1);
+    SetStatusText(wxEmptyString, 1); //wxbuildinfo(short_f), 1);
 #endif // wxUSE_STATUSBAR
     Centre();
 }
@@ -264,7 +268,7 @@ void ide3acFrame::OnFileSave(wxCommandEvent &WXUNUSED(event))
 {
     if (!m_editor)
         return;
-    if (!m_editor->IsModified())
+    if (!m_editor->Modified())
     {
         wxMessageBox(_("There is nothing to save!"), _("Save file"),
                       wxOK | wxICON_EXCLAMATION);
@@ -297,13 +301,13 @@ void ide3acFrame::OnFileClose(wxCommandEvent &WXUNUSED(event))
 {
     if (!m_editor)
         return;
-    if (m_editor->IsModified())
+    if (m_editor->Modified())
     {
         if (wxMessageBox(_("Source file is not saved, save before closing?"), _("Close"),
                           wxYES_NO | wxICON_QUESTION) == wxYES)
         {
             m_editor->SaveFile();
-            if (m_editor->IsModified())
+            if (m_editor->Modified())
             {
                 wxMessageBox(_("Text could not be saved!"), _("Close abort"),
                               wxOK | wxICON_EXCLAMATION);
@@ -336,9 +340,32 @@ void ide3acFrame::OnEdit (wxCommandEvent &event)
 
 void ide3acFrame::OnModified(wxStyledTextEvent &WXUNUSED(event))
 {
+    if (!m_editor->Modified())
+        return;
     wxFileName w(m_editor->GetFilename());
     w.Normalize();
     m_notebook->SetPageText(m_notebook->GetSelection(), wxT("*") + w.GetName());
+}
+
+// entity event
+void ide3acFrame::OnEduToggle(wxCommandEvent &event)
+{
+    OnFileClose(event);
+    if (m_menuBar->IsChecked(myID_EDU_TOGGLE))
+    {
+        m_vbox->Show(m_edu_toolBar);
+        m_notebook->SetPageText(m_notebook->GetSelection(), m_editor->GetFilename());
+    }
+    else
+        m_vbox->Hide(m_edu_toolBar);
+    m_vbox->Layout();
+    if (m_editor)
+        m_editor->GetEventHandler()->ProcessEvent(event);
+}
+
+void ide3acFrame::OnEduPageChange(wxCommandEvent &event)
+{
+    m_notebook->SetPageText(m_notebook->GetSelection(), m_editor->GetFilename());
 }
 
 // private functions
@@ -384,7 +411,6 @@ void ide3acFrame::CreateMenu ()
     wxMenu *menuView = new wxMenu;
     menuView->AppendCheckItem (myID_TOOLBAR_TOGGLE, _("Tool&bar"));
     menuView->AppendSeparator();
-    menuView->AppendCheckItem (myID_FOLDTOGGLE, _("&Toggle current fold\tCtrl+T"));
     menuView->AppendCheckItem (myID_OVERTYPE, _("&Overwrite mode\tIns"));
     menuView->AppendCheckItem (myID_WRAPMODEON, _("&Wrap mode\tCtrl+U"));
     menuView->AppendSeparator();
@@ -392,6 +418,8 @@ void ide3acFrame::CreateMenu ()
     menuView->AppendCheckItem (myID_LINENUMBER, _("Show line &numbers"));
     menuView->AppendCheckItem (myID_LONGLINEON, _("Show &long line marker"));
     menuView->AppendCheckItem (myID_WHITESPACE, _("Show white&space"));
+    menuView->AppendSeparator();
+    menuView->AppendCheckItem (myID_BB, _("Show &base blocks"));
 
     // target platform submenu
     wxMenu *menuTargetPlatform = new wxMenu;
@@ -411,6 +439,8 @@ void ide3acFrame::CreateMenu ()
 
     // Tools menu
     wxMenu *menuTools = new wxMenu;
+    menuTools->AppendCheckItem (myID_EDU_TOGGLE, _("&Toggle educational mode\tCtrl+T"));
+    menuTools->AppendSeparator();
     menuTools->Append (myID_OPTIONS, _("&Options"));
 
     // Window menu
@@ -434,8 +464,10 @@ void ide3acFrame::CreateMenu ()
     m_menuBar->Append (menuHelp, _("&Help"));
     SetMenuBar (m_menuBar);
 
-    m_menuBar->Check(myID_X86, true);
+    m_menuBar->Check(myID_ARM, true);
     m_menuBar->Check(myID_TOOLBAR_TOGGLE, true);
+    m_menuBar->Check(myID_BB, false);
+    m_menuBar->Check(myID_EDU_TOGGLE, false);
 }
 
 void ide3acFrame::CreateToolbar ()
@@ -455,6 +487,10 @@ void ide3acFrame::CreateToolbar ()
     wxBitmap runb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_EXECUTABLE_FILE")),wxART_TOOLBAR));
     wxBitmap optionsb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_LIST_VIEW")),wxART_TOOLBAR));
     wxBitmap questionb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_QUESTION")),wxART_TOOLBAR));
+
+    wxBitmap homeb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_GO_HOME")),wxART_TOOLBAR));
+    wxBitmap prevb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_GO_BACK")),wxART_TOOLBAR));
+    wxBitmap nextb(wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_GO_FORWARD")),wxART_TOOLBAR));
 
     m_toolBar->AddTool(wxID_NEW, wxT("New"), newb, newb, wxITEM_NORMAL, wxT("Create new source file"));
     m_toolBar->AddTool(wxID_OPEN, wxT("Open"), openb, openb, wxITEM_NORMAL, wxT("Open source file"));
@@ -481,6 +517,13 @@ void ide3acFrame::CreateToolbar ()
     m_toolBar->AddTool(wxID_HELP_CONTENTS, wxT("Help"), questionb, questionb, wxITEM_NORMAL, wxT("Open help Contents.."));
 
     m_toolBar->Realize();
+
+    m_edu_toolBar->AddTool(myID_EDU_HOME, wxT("First page"), homeb, homeb, wxITEM_NORMAL, wxT("Show first educational page"));
+    m_edu_toolBar->AddTool(myID_EDU_PREV, wxT("Previous page"), prevb, prevb, wxITEM_NORMAL, wxT("Show previous educational page"));
+    m_edu_toolBar->AddTool(myID_EDU_NEXT, wxT("Next page"), nextb, nextb, wxITEM_NORMAL, wxT("Show next educational page"));
+    m_edu_toolBar->AddTool(myID_EDU_RESET, wxT("Reset page"), undob, undob, wxITEM_NORMAL, wxT("Reset educational page"));
+
+    m_edu_toolBar->Realize();
 
     Connect(wxID_NEW, wxEVT_COMMAND_TOOL_CLICKED,
             wxCommandEventHandler(ide3acFrame::OnFileNew));
@@ -513,6 +556,15 @@ void ide3acFrame::CreateToolbar ()
             wxCommandEventHandler(ide3acFrame::OnOptions));
     Connect(wxID_HELP_CONTENTS, wxEVT_COMMAND_TOOL_CLICKED,
             wxCommandEventHandler(ide3acFrame::OnHelpContents));*/
+
+    Connect(myID_EDU_HOME, wxEVT_COMMAND_TOOL_CLICKED,
+            wxCommandEventHandler(ide3acFrame::OnEdit));
+    Connect(myID_EDU_PREV, wxEVT_COMMAND_TOOL_CLICKED,
+            wxCommandEventHandler(ide3acFrame::OnEdit));
+    Connect(myID_EDU_NEXT, wxEVT_COMMAND_TOOL_CLICKED,
+            wxCommandEventHandler(ide3acFrame::OnEdit));
+    Connect(myID_EDU_RESET, wxEVT_COMMAND_TOOL_CLICKED,
+            wxCommandEventHandler(ide3acFrame::OnEdit));
 }
 
 void ide3acFrame::FileOpen(wxString fname)
